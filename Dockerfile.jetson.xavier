@@ -1,0 +1,54 @@
+ARG base_image
+
+FROM ${base_image} AS lib_builder
+
+ARG soc
+ARG l4t_version
+
+# deleting /etc/ld.so.conf.d/nvidia-tegra.conf as a workaround for cross-compiling
+# error log:
+# Configuration file '/etc/ld.so.conf.d/nvidia-tegra.conf'
+# ==> File on system created by you or by a script.
+# ==> File also in package provided by package maintainer.
+
+# touching .nv-l4t-disable-boot-fw-update-in-preinstall file
+# "disables the boot firmware update during postinst" 
+# https://forums.developer.nvidia.com/t/remote-tx1-tx2-ota-upgrade-from-jetpack-3-0-to-jetpack-4-4-1/160949
+# it is necessary for cross-compilation
+
+ADD --chown=root:root https://repo.download.nvidia.com/jetson/jetson-ota-public.asc /etc/apt/trusted.gpg.d/jetson-ota-public.asc
+
+RUN chmod 644 /etc/apt/trusted.gpg.d/jetson-ota-public.asc \
+    && echo "deb https://repo.download.nvidia.com/jetson/$soc r$l4t_version main" > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list \
+    && rm /etc/ld.so.conf.d/nvidia-tegra.conf \
+    && mkdir -p /opt/nvidia/l4t-packages/ \
+    && touch /opt/nvidia/l4t-packages/.nv-l4t-disable-boot-fw-update-in-preinstall \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        nvidia-l4t-multimedia \
+        cuda-toolkit-11-4 \
+        build-essential \
+        libgstreamer-plugins-base1.0-dev \
+        libgstreamer1.0-dev \
+        python3-pip \
+        python3.8-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m pip install scikit-build pybind11[global] twine
+
+# Newer cmake ver. needed for "FindCUDAToolkit"
+RUN mkdir -p /tmp/cmake \
+    && cd /tmp/cmake \
+    && wget https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-linux-aarch64.sh \
+    && sh cmake-3.23.2-linux-aarch64.sh --skip-license --prefix=/usr/
+
+RUN mkdir -p /opt/app/savantboost
+
+WORKDIR /opt/app/savantboost
+COPY savantboost ./savantboost 
+COPY pysavantboost ./pysavantboost
+COPY CMakeLists.txt .
+COPY build.sh .
+COPY setup.py .
+
+CMD ./build.sh
