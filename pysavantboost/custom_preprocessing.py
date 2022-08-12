@@ -5,5 +5,5 @@ from pysavantboost import Image
 class CustomPreprocessing(ABC):
 
     @abstractmethod
-    def preprocessing(Image) -> Image:
+    def preprocessing(self, img: Image) -> Image:
         pass

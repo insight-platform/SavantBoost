@@ -1,0 +1,64 @@
+name: Build Packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-package:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: dgpu
+            arch: linux/amd64
+          - name: jetson-xavier
+            arch: linux/arm64
+          - name: jetson-nano
+            arch: linux/arm64
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Check if tag matches project version
+      run: |
+        PROJECT_VERSION=$(cat VERSION)
+        TAG=$(git describe HEAD --tags --abbrev=0)
+        echo $TAG
+        echo $PROJECT_VERSION
+        if [[ "$TAG" != "v$PROJECT_VERSION" ]]; then exit 1; fi
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Build docker
+      uses: docker/build-push-action@v3
+      with:
+        file: docker/Dockerfile.${{ matrix.name }}
+        tags: ${{ matrix.name }}-builder:latest
+#        build-args: |
+#          base_image=${{ matrix.base_image }}
+#          soc=${{ matrix.soc }}
+#          l4t_version=${{ matrix.l4t_version }}
+        platforms: ${{ matrix.arch }}
+        load: true
+
+    - name: Run docker
+      run: docker run --rm -v dist/:/opt/app/dist ${{ matrix.name }}-builder:latest
+
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        file: dist/*.whl
+        overwrite: true
+        file_glob: true

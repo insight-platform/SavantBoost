@@ -1,0 +1,9 @@
+.idea/
+.vscode/
+.gitignore
+.git
+.github/
+__pycache__/
+docker/
+.dockerignore
+Makefile
