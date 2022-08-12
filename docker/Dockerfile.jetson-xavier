@@ -1,9 +1,7 @@
-ARG base_image
+FROM nvcr.io/nvidia/deepstream-l4t:6.1-samples AS lib_builder
 
-FROM ${base_image} AS lib_builder
-
-ARG soc
-ARG l4t_version
+ARG soc=t194
+ARG l4t_version=34.1
 
 # deleting /etc/ld.so.conf.d/nvidia-tegra.conf as a workaround for cross-compiling
 # error log:
@@ -34,21 +32,19 @@ RUN chmod 644 /etc/apt/trusted.gpg.d/jetson-ota-public.asc \
         python3.8-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python3 -m pip install scikit-build pybind11[global] twine
-
 # Newer cmake ver. needed for "FindCUDAToolkit"
 RUN mkdir -p /tmp/cmake \
     && cd /tmp/cmake \
-    && wget https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-linux-aarch64.sh \
+    && wget --progress=bar:force:noscroll https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-linux-aarch64.sh \
     && sh cmake-3.23.2-linux-aarch64.sh --skip-license --prefix=/usr/
 
-RUN mkdir -p /opt/app/savantboost
+ARG APP_PATH=/opt/app
+RUN mkdir -p $APP_PATH
+VOLUME $APP_PATH/dist
+WORKDIR $APP_PATH
+COPY . .
 
-WORKDIR /opt/app/savantboost
-COPY savantboost ./savantboost 
-COPY pysavantboost ./pysavantboost
-COPY CMakeLists.txt .
-COPY build.sh .
-COPY setup.py .
+RUN python3 -m pip install --upgrade pip \
+    && python3 -m pip install -r requirements.txt
 
 CMD ./build.sh

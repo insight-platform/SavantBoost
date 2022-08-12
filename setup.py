@@ -1,36 +1,24 @@
-#
-# Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
-# this work for additional information regarding copyright ownership.
-# The ASF licenses this file to You under the Apache License, Version 2.0
-# (the "License"); you may not use this file except in compliance with
-# the License.  You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+from skbuild import setup
 
-
-import sys
-
-try:
-    from skbuild import setup
-except ImportError:
-    print('Please update pip, you need pip 10 or greater,\n'
-          ' or you need to install the PEP 518 requirements in pyproject.toml yourself', file=sys.stderr)
-    raise
+version_file = 'VERSION'
+with open(version_file, 'r') as file_obj:
+    content = file_obj.read().splitlines()
+    version = content[0]
 
 setup(
-    name="savantboost",
-    version="1.0.2",
-    description="Python binding for Computer vision boost library",
-    author='BitWorks LLC',
+    name='savantboost',
+    version=version,
+    description='Python binding for Savant boost library',
+    author='Nikolay Bogoslovskiy',
+    author_email='bogoslovskiy_nn@bw-sw.com',
+    license='Apache License 2.0',
     packages=['pysavantboost'],
     package_dir={'': ''},
-    cmake_install_dir='pysavantboost'
+    cmake_install_dir='pysavantboost',
+    data_files=[('./', [version_file])],
+    classifiers=[
+        'License :: OSI Approved :: Apache Software License',
+        'Programming Language :: Python :: 3 :: Only',
+    ],
+    python_requires='>=3.6',
 )

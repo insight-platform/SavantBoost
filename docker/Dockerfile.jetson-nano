@@ -1,9 +1,7 @@
-ARG base_image
+FROM nvcr.io/nvidia/deepstream-l4t:6.0.1-samples AS lib_builder
 
-FROM ${base_image} AS lib_builder
-
-ARG soc
-ARG l4t_version
+ARG soc=t210
+ARG l4t_version=32.6
 
 ADD --chown=root:root https://repo.download.nvidia.com/jetson/jetson-ota-public.asc /etc/apt/trusted.gpg.d/jetson-ota-public.asc
 
@@ -25,9 +23,6 @@ RUN chmod 644 /etc/apt/trusted.gpg.d/jetson-ota-public.asc \
         python3.6-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python3 -m pip install --upgrade pip \
-    && python3 -m pip install scikit-build pybind11[global] twine
-
 RUN mkdir -p /tmp/cub \
     && cd /tmp/cub \
     && wget -c https://github.com/NVIDIA/cub/archive/refs/tags/1.8.0.tar.gz -O - | tar -xz --strip-components 1 \
@@ -36,15 +31,16 @@ RUN mkdir -p /tmp/cub \
 
 RUN mkdir -p /tmp/cmake \
     && cd /tmp/cmake \
-    && wget https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-linux-aarch64.sh \
+    && wget --progress=bar:force:noscroll https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-linux-aarch64.sh \
     && sh cmake-3.23.2-linux-aarch64.sh --skip-license --prefix=/usr/
-RUN mkdir -p /opt/app/savantboost
 
-WORKDIR /opt/app/savantboost
-COPY savantboost /opt/app/savantboost/savantboost 
-COPY pysavantboost /opt/app/savantboost/pysavantboost
-COPY CMakeLists.txt /opt/app/savantboost
-COPY build.sh /opt/app/savantboost
-COPY setup.py /opt/app/savantboost
-WORKDIR /opt/app/savantboost
+ARG APP_PATH=/opt/app
+RUN mkdir -p $APP_PATH
+VOLUME $APP_PATH/dist
+WORKDIR $APP_PATH
+COPY . .
+
+RUN python3 -m pip install --upgrade pip \
+    && python3 -m pip install -r requirements.txt
+
 CMD ./build.sh
