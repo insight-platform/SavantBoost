@@ -53,6 +53,9 @@ jobs:
         platforms: ${{ matrix.arch }}
         load: true
 
+    - name: Remove dotnet
+      run: sudo rm -rf /usr/share/dotnet
+
     - name: Check disk usage
       run: |
         df -h
