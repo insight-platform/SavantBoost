@@ -31,7 +31,7 @@ RUN mkdir -p /tmp/cub \
 
 RUN mkdir -p /tmp/cmake \
     && cd /tmp/cmake \
-    && wget https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-linux-aarch64.sh \
+    && wget --progress=bar:force:noscroll https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-linux-aarch64.sh \
     && sh cmake-3.23.2-linux-aarch64.sh --skip-license --prefix=/usr/
 
 ARG APP_PATH=/opt/app

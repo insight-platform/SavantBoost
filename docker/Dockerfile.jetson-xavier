@@ -32,12 +32,10 @@ RUN chmod 644 /etc/apt/trusted.gpg.d/jetson-ota-public.asc \
         python3.8-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python3 -m pip install scikit-build pybind11[global] twine
-
 # Newer cmake ver. needed for "FindCUDAToolkit"
 RUN mkdir -p /tmp/cmake \
     && cd /tmp/cmake \
-    && wget https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-linux-aarch64.sh \
+    && wget --progress=bar:force:noscroll https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-linux-aarch64.sh \
     && sh cmake-3.23.2-linux-aarch64.sh --skip-license --prefix=/usr/
 
 ARG APP_PATH=/opt/app
