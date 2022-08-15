@@ -10,7 +10,7 @@ setup(
     version=version,
     description='Python binding for Savant boost library',
     author='Nikolay Bogoslovskiy',
-    author_email='dorgun@mail.ru',
+    author_email='bogoslovskiy_nn@bw-sw.com',
     license='Apache License 2.0',
     packages=['pysavantboost'],
     package_dir={'': ''},
