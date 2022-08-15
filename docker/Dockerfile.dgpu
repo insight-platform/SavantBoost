@@ -1,0 +1,27 @@
+FROM nvcr.io/nvidia/deepstream:6.1-devel AS lib_builder
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        wget \
+        build-essential \
+        libgstreamer-plugins-base1.0-dev \
+        libgstreamer1.0-dev \
+        python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Newer cmake ver. needed for "FindCUDAToolkit"
+RUN mkdir -p /tmp/cmake \
+    && cd /tmp/cmake \
+    && wget --progress=bar:force:noscroll https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-linux-x86_64.sh \
+    && sh cmake-3.23.2-linux-x86_64.sh --skip-license --prefix=/usr/local/
+
+ARG APP_PATH=/opt/app
+RUN mkdir -p $APP_PATH
+VOLUME $APP_PATH/dist
+WORKDIR $APP_PATH
+COPY . .
+
+RUN python3 -m pip install --upgrade pip \
+    && python3 -m pip install -r requirements.txt
+
+CMD ./build.sh

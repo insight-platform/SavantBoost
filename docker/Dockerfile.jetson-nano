@@ -1,0 +1,46 @@
+FROM nvcr.io/nvidia/deepstream-l4t:6.0.1-samples AS lib_builder
+
+ARG soc=t210
+ARG l4t_version=32.6
+
+ADD --chown=root:root https://repo.download.nvidia.com/jetson/jetson-ota-public.asc /etc/apt/trusted.gpg.d/jetson-ota-public.asc
+
+RUN chmod 644 /etc/apt/trusted.gpg.d/jetson-ota-public.asc \
+    && echo "deb https://repo.download.nvidia.com/jetson/common r$l4t_version main" > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list \
+    && echo "deb https://repo.download.nvidia.com/jetson/$soc r$l4t_version main" >> /etc/apt/sources.list.d/nvidia-l4t-apt-source.list \
+    && rm /etc/ld.so.conf.d/nvidia-tegra.conf \
+    && mkdir -p /opt/nvidia/l4t-packages/ \
+    && touch /opt/nvidia/l4t-packages/.nv-l4t-disable-boot-fw-update-in-preinstall \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        cuda-toolkit-10-2 \
+        nvidia-l4t-multimedia \
+        build-essential \
+        libgstreamer-plugins-base1.0-dev \
+        libgstreamer1.0-dev \
+        python3-pip \
+        python3-setuptools \
+        python3.6-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /tmp/cub \
+    && cd /tmp/cub \
+    && wget -c https://github.com/NVIDIA/cub/archive/refs/tags/1.8.0.tar.gz -O - | tar -xz --strip-components 1 \
+    && mv /tmp/cub/cub /usr/include/ \
+    && ls -al /usr/include/cub
+
+RUN mkdir -p /tmp/cmake \
+    && cd /tmp/cmake \
+    && wget --progress=bar:force:noscroll https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-linux-aarch64.sh \
+    && sh cmake-3.23.2-linux-aarch64.sh --skip-license --prefix=/usr/
+
+ARG APP_PATH=/opt/app
+RUN mkdir -p $APP_PATH
+VOLUME $APP_PATH/dist
+WORKDIR $APP_PATH
+COPY . .
+
+RUN python3 -m pip install --upgrade pip \
+    && python3 -m pip install -r requirements.txt
+
+CMD ./build.sh

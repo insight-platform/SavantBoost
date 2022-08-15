@@ -1,0 +1,10 @@
+.idea/
+.vscode/
+build/
+dist/
+firmware/
+cmake-build-debug/
+builds/
+_skbuild/
+__pycache__/
+*.egg-info/
