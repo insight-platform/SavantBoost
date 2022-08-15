@@ -19,7 +19,8 @@ jobs:
           - name: jetson-nano
             arch: linux/arm64
 
-    runs-on: ubuntu-latest
+#    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     permissions:
       contents: write
@@ -52,14 +53,6 @@ jobs:
 #          l4t_version=${{ matrix.l4t_version }}
         platforms: ${{ matrix.arch }}
         load: true
-
-    - name: Remove dotnet
-      run: sudo rm -rf /usr/share/dotnet
-
-    - name: Check disk usage
-      run: |
-        df -h
-        docker buildx du
 
     - name: Run docker
       run: |
