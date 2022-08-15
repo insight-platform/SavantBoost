@@ -53,6 +53,11 @@ jobs:
         platforms: ${{ matrix.arch }}
         load: true
 
+    - name: Check disk usage
+      run: |
+        df -h
+        docker buildx du
+
     - name: Run docker
       run: |
         mkdir dist
