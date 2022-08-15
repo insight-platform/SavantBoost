@@ -47,10 +47,6 @@ jobs:
       with:
         file: docker/Dockerfile.${{ matrix.name }}
         tags: ${{ matrix.name }}-builder:latest
-#        build-args: |
-#          base_image=${{ matrix.base_image }}
-#          soc=${{ matrix.soc }}
-#          l4t_version=${{ matrix.l4t_version }}
         platforms: ${{ matrix.arch }}
         load: true
 
