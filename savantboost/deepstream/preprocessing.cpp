@@ -167,7 +167,7 @@ GstFlowReturn ObjectsPreprocessing::preprocessing(
                         NppiSize dst_image_size = {.width = rect_params.width, .height = rect_params.height};
 
                         cudaCrop(
-                            (Npp8u *) ref_frame,
+                            (Npp8u *) copy_frame,
                             src_image_size,
                             crop_rect,
                             (Npp8u*) preproc_object->getDataPtr(),
@@ -187,6 +187,18 @@ GstFlowReturn ObjectsPreprocessing::preprocessing(
 
                     NppiRect crop_rect = {.x =0, .y=0, .width = preproc_object->getWidth(), .height = preproc_object->getHeight()};
                     NppiSize clc_pencil_image_size = {.width = preproc_object->getWidth(), .height = preproc_object->getHeight()};
+                    
+                    if (left_pencil_bbox + preproc_object->getWidth() > ref_frame_size.width) 
+                    {
+                        left_pencil_bbox = 0;
+                        top_pencil_bbox += row_height;
+                        row_height = 0;
+                        if (top_pencil_bbox >= ref_frame_size.height) throw std::runtime_error("There is no place on frame to put object image.");
+                    }
+                    if (top_pencil_bbox + preproc_object->getHeight() > ref_frame_size.height)
+                        throw std::runtime_error("There is no place on frame to put object image.");
+                    if (preproc_object->getHeight() > row_height) row_height = preproc_object->getHeight();
+
                     cudaCrop(
                         (Npp8u *) preproc_object->getDataPtr(),
                         clc_pencil_image_size,
@@ -202,14 +214,6 @@ GstFlowReturn ObjectsPreprocessing::preprocessing(
                     object_meta->rect_params.height = (float) preproc_object->getHeight();
 
                     left_pencil_bbox += preproc_object->getWidth() ;
-                    if (preproc_object->getHeight() > row_height) row_height = preproc_object->getHeight();
-                    if (left_pencil_bbox >= ref_frame_size.width)
-                    {
-                        left_pencil_bbox = 0;
-                        top_pencil_bbox += row_height;
-                        row_height = 0;
-                        if (top_pencil_bbox >= ref_frame_size.height) throw std::runtime_error("There is no place on image to put pencil.");
-                    }
                     if (preproc_object!=nullptr) delete preproc_object;
                 }
             }
@@ -217,17 +221,19 @@ GstFlowReturn ObjectsPreprocessing::preprocessing(
         }
         ds_cuda_memory.UnMapCudaPtr();
         gst_buffer_unmap (inbuf, &in_map_info);
+        std::cout << " ####  end call preprocessing  #### " << std::endl;
         return GST_FLOW_OK;
     }
     else
     {
         GST_ERROR("Failed to map gst buffer.");
         gst_buffer_unmap (inbuf, &in_map_info);
+        std::cout << " #### end call preprocessing  error #### " << std::endl;
         return flow_ret;
     }
 }
 
-GstFlowReturn ObjectsPreprocessing::restore_frame(GstBuffer* gst_buffer, int batchID){
+GstFlowReturn ObjectsPreprocessing::restore_frame(GstBuffer* gst_buffer){
     
     GstMapInfo in_map_info;
     gboolean status;
