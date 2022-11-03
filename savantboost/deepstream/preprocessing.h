@@ -60,7 +60,7 @@ class ObjectsPreprocessing{
             std::string custom_lib,
             std::string custom_func           
         );
-        GstFlowReturn restore_frame(GstBuffer* gst_buffer, int batchID);
+        GstFlowReturn restore_frame(GstBuffer* gst_buffer);
         GstFlowReturn preprocessing_rect(GstBuffer * inbuf, gint model_uid, gint class_id, gint padding_width, gint padding_height);
         GstFlowReturn preprocessing(
             std::string element_name,
