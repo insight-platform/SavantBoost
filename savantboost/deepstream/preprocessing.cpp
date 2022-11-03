@@ -221,14 +221,12 @@ GstFlowReturn ObjectsPreprocessing::preprocessing(
         }
         ds_cuda_memory.UnMapCudaPtr();
         gst_buffer_unmap (inbuf, &in_map_info);
-        std::cout << " ####  end call preprocessing  #### " << std::endl;
         return GST_FLOW_OK;
     }
     else
     {
         GST_ERROR("Failed to map gst buffer.");
         gst_buffer_unmap (inbuf, &in_map_info);
-        std::cout << " #### end call preprocessing  error #### " << std::endl;
         return flow_ret;
     }
 }
