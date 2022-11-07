@@ -16,14 +16,17 @@ ARG l4t_version=34.1
 
 ADD --chown=root:root https://repo.download.nvidia.com/jetson/jetson-ota-public.asc /etc/apt/trusted.gpg.d/jetson-ota-public.asc
 
+RUN rm /etc/apt/sources.list.d/cuda.list
+
 RUN chmod 644 /etc/apt/trusted.gpg.d/jetson-ota-public.asc \
     && echo "deb https://repo.download.nvidia.com/jetson/$soc r$l4t_version main" > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list \
     && rm /etc/ld.so.conf.d/nvidia-tegra.conf \
     && mkdir -p /opt/nvidia/l4t-packages/ \
     && touch /opt/nvidia/l4t-packages/.nv-l4t-disable-boot-fw-update-in-preinstall \
     && apt-get update \
-    && apt-get install -y --no-install-recommends \
+    && apt-get install -y --allow-change-held-packages \
         nvidia-l4t-multimedia \
+        libcublas-11-4 \
         cuda-toolkit-11-4 \
         build-essential \
         libgstreamer-plugins-base1.0-dev \
