@@ -97,11 +97,10 @@ namespace pysavantboost {
                )
                .def("restore_frame", [] (
                     ObjectsPreprocessing &self,
-                    size_t inbuf,
-                    int batchID
+                    size_t inbuf
                ){
                     auto *buffer = reinterpret_cast<GstBuffer *>(inbuf);
-                    self.restore_frame(buffer, batchID);
+                    self.restore_frame(buffer);
                }, 
                pydsdoc::preprocessing::ObjectsPreprocessing::restore_frame)
                .def(

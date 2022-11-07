@@ -132,7 +132,7 @@ GstFlowReturn ObjectsPreprocessing::preprocessing(
             cudaCheckError()
             frames_map[(size_t) inbuf].insert({frame_meta->batch_id, (void *) copy_frame});
             
-            int left_pencil_bbox=0, top_pencil_bbox=0, row_height=0;
+            int left=0, top=0, row_height=0;
             int tmp_i = 0;
             int tmp_j = 0;
             for (object_meta_list = frame_meta->obj_meta_list; object_meta_list != nullptr; object_meta_list = object_meta_list -> next)
@@ -167,7 +167,7 @@ GstFlowReturn ObjectsPreprocessing::preprocessing(
                         NppiSize dst_image_size = {.width = rect_params.width, .height = rect_params.height};
 
                         cudaCrop(
-                            (Npp8u *) ref_frame,
+                            (Npp8u *) copy_frame,
                             src_image_size,
                             crop_rect,
                             (Npp8u*) preproc_object->getDataPtr(),
@@ -186,30 +186,35 @@ GstFlowReturn ObjectsPreprocessing::preprocessing(
 
 
                     NppiRect crop_rect = {.x =0, .y=0, .width = preproc_object->getWidth(), .height = preproc_object->getHeight()};
-                    NppiSize clc_pencil_image_size = {.width = preproc_object->getWidth(), .height = preproc_object->getHeight()};
+                    NppiSize clc_image_size = {.width = preproc_object->getWidth(), .height = preproc_object->getHeight()};
+                    
+                    if (left + preproc_object->getWidth() > ref_frame_size.width) 
+                    {
+                        left = 0;
+                        top += row_height;
+                        row_height = 0;
+                        if (top >= ref_frame_size.height) throw std::runtime_error("There is no place on frame to put object image.");
+                    }
+                    if (top + preproc_object->getHeight() > ref_frame_size.height)
+                        throw std::runtime_error("There is no place on frame to put object image.");
+                    if (preproc_object->getHeight() > row_height) row_height = preproc_object->getHeight();
+
                     cudaCrop(
                         (Npp8u *) preproc_object->getDataPtr(),
-                        clc_pencil_image_size,
+                        clc_image_size,
                         crop_rect,
                         ref_frame,
                         ref_frame_size,
-                        left_pencil_bbox,
-                        top_pencil_bbox);
+                        left,
+                        top
+                    );
 
-                    object_meta->rect_params.left = (float) left_pencil_bbox;
-                    object_meta->rect_params.top = (float) top_pencil_bbox;
+                    object_meta->rect_params.left = (float) left;
+                    object_meta->rect_params.top = (float) top;
                     object_meta->rect_params.width = (float) preproc_object->getWidth();
                     object_meta->rect_params.height = (float) preproc_object->getHeight();
 
-                    left_pencil_bbox += preproc_object->getWidth() ;
-                    if (preproc_object->getHeight() > row_height) row_height = preproc_object->getHeight();
-                    if (left_pencil_bbox >= ref_frame_size.width)
-                    {
-                        left_pencil_bbox = 0;
-                        top_pencil_bbox += row_height;
-                        row_height = 0;
-                        if (top_pencil_bbox >= ref_frame_size.height) throw std::runtime_error("There is no place on image to put pencil.");
-                    }
+                    left += preproc_object->getWidth() ;
                     if (preproc_object!=nullptr) delete preproc_object;
                 }
             }
@@ -227,7 +232,7 @@ GstFlowReturn ObjectsPreprocessing::preprocessing(
     }
 }
 
-GstFlowReturn ObjectsPreprocessing::restore_frame(GstBuffer* gst_buffer, int batchID){
+GstFlowReturn ObjectsPreprocessing::restore_frame(GstBuffer* gst_buffer){
     
     GstMapInfo in_map_info;
     gboolean status;
